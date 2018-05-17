@@ -31,6 +31,7 @@ var (
 	handle          *pcap.Handle
 	f               *os.File
 	zip             bool
+	debug           bool
 )
 
 func init() {
@@ -39,6 +40,7 @@ func init() {
 	flag.StringVar(&filter, "f", "udp and port 5060", "filter")
 	flag.IntVar(&durationMinutes, "r", 1, "rotate out file every minutes")
 	flag.BoolVar(&zip, "z", false, "zip rotated file")
+	flag.BoolVar(&debug, "debug", false, "debug")
 	flag.StringVar(&pidFile, "p", "/var/run/sniff.pid", "pid file")
 }
 
@@ -82,8 +84,13 @@ func main() {
 		packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 
 		start := time.Now()
+		fmt.Printf("sniff on %s", deviceName)
+
 		for packet := range packetSource.Packets() {
-			fmt.Println(packet)
+			if debug {
+				fmt.Println(packet)
+			}
+
 			writer.WritePacket(packet.Metadata().CaptureInfo, packet.Data())
 
 			if time.Since(start) > time.Minute*time.Duration(durationMinutes) {
